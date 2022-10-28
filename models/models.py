@@ -34,6 +34,7 @@ class Ticket(Base):
     user_id = Column(Integer, ForeignKey('User.id'))
     seat = Column(Integer)
     status = Column(Enum(Status1))
+    #xd = Column(Integer)
 
 
 class User(Base):
