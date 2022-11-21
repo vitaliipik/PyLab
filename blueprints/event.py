@@ -1,6 +1,6 @@
 from flask import Blueprint
 from sqlalchemy import create_engine
-
+from blueprints.auth import auth
 from sqlalchemy.exc import IntegrityError
 from flask import request
 from sqlalchemy.orm import sessionmaker
@@ -16,6 +16,7 @@ events = Blueprint('events', __name__)
 
 
 @events.route("/api/v1/event", methods=['POST'])
+@auth.login_required(role='admin')
 def create_event():
     event_data = request.get_json()
     if event_data is None:
@@ -30,6 +31,7 @@ def create_event():
 
 
 @events.route("/api/v1/event", methods=['GET'])
+@auth.login_required()
 def get_event():
     param = request.args
     if 'event' not in param:
@@ -45,6 +47,7 @@ def get_event():
 
 
 @events.route("/api/v1/event/<event_id>", methods=['GET'])
+@auth.login_required(role='admin')
 def event_by_id(event_id):
     with Session.begin() as session:
         event = session.query(Event)
@@ -56,6 +59,7 @@ def event_by_id(event_id):
 
 
 @events.route("/api/v1/event", methods=['PUT'])
+@auth.login_required(role='admin')
 def update_event():
     event_data = request.get_json()
     if event_data is None:
@@ -78,6 +82,7 @@ def update_event():
 
 
 @events.route("/api/v1/event/<event_id>", methods=["DELETE"])
+@auth.login_required(role='admin')
 def delete_event(event_id):
     try:
         with Session.begin() as session:

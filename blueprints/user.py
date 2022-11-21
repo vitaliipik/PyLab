@@ -1,11 +1,14 @@
-from flask import Blueprint
+from flask import Blueprint, jsonify
 from sqlalchemy import create_engine
 import bcrypt
+import base64
 from sqlalchemy.exc import IntegrityError
 from flask import request
 from sqlalchemy.orm import sessionmaker
 
-from models.models import Ticket, User
+from blueprints.auth import auth
+from errors.auth_errors import NotEnoughRights, InvalidCredentials
+from models.models import Ticket, User, Role
 from flask import Response
 from models.json_encoder import AlchemyEncoder
 import json
@@ -40,11 +43,10 @@ def login_user():
                 user = session.query(User).filter_by(username=data['username']).first()
                 if not bcrypt.checkpw(data['password'].encode("utf-8"), user.password.encode("utf-8")):
                     return Response("Invalid password or username specified", status=404)
-
-                return Response(json.dumps(user.to_dict()), status=200) # this should return token
+                token = base64.encodebytes(f"{data['email']}:{data['password']}".encode('utf-8'))
+                return jsonify({'basic': token.decode("utf-8").replace("\n", "")}), 200
     except IntegrityError:
-        return Response("Invalid username or password specified", status=400)
-
+        raise InvalidCredentials("A password or username is wrong. Try again.")
     return Response("Invalid request body, specify password and username, please!", status=400)
 
 
@@ -59,11 +61,16 @@ def get_user(username: str):
 
 
 @users.route("/api/v1/user", methods=['PUT'])
+@auth.login_required()
 def update_user():
     data = request.get_json()
     if data is None:
         return Response("No JSON data has been specified!", status=400)
     with Session.begin() as session:
+        if auth.current_user().role != Role.admin and \
+                'username' in data and \
+                auth.current_user().username != data['username']:
+            raise NotEnoughRights("Not enough rights to update user")
         user = User(**data) # check if it validates
         if 'password' in data:
             data['password'] = user.password
@@ -73,7 +80,11 @@ def update_user():
 
 
 @users.route("/api/v1/user/<username>", methods=['DELETE'])
+@auth.login_required()
 def delete_user(username):
+    role = auth.current_user().role
+    if Role.admin != role:
+        raise NotEnoughRights("Not enough rights to delete user")
     with Session.begin() as session:
         users_deleted = session.query(User).filter(User.username == username).delete(synchronize_session="fetch")
         if users_deleted == 0:
@@ -83,7 +94,11 @@ def delete_user(username):
 
 
 @users.route("/api/v1/user/<username>/tickets", methods=['GET'])
+@auth.login_required()
 def get_user_tickets(username):
+    if auth.current_user().role != Role.admin and \
+            auth.current_user().username != username:
+        raise NotEnoughRights("Not enough rights to get user by this username")
     with Session.begin() as session:
         if session.query(User).filter(User.username == username).first() is None:
             return Response(status=400)

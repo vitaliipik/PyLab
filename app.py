@@ -1,6 +1,6 @@
-from flask import Flask
+from flask import Flask, jsonify
 from sqlalchemy.exc import IntegrityError
-
+from errors.auth_errors import InvalidCredentials, NotEnoughRights
 from blueprints.event import events
 from blueprints.user import users
 from blueprints.ticketactions import ticketactions
@@ -20,11 +20,28 @@ def value_error_handler(e):
     return str(e), 400
 
 
+@app.errorhandler(Exception)
+def base_error_handler(e):
+    return str(e), 400
+
+
 @app.errorhandler(IntegrityError)
 def integrity_error_handler(e):
-    return str(e), 400
+    return jsonify({'message': str(e)}), 400
+
+
+@app.errorhandler(InvalidCredentials)
+def invalid_credentials_handler(e):
+    return jsonify({'message': str(e)}), 401
+
+
+@app.errorhandler(NotEnoughRights)
+def invalid_credentials_handler(e):
+    return jsonify({'message': str(e)}), 403
 
 
 @app.errorhandler(Exception)
 def base_error_handler(e):
     return str(e), 400
+
+
