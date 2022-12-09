@@ -7,15 +7,15 @@ externalDocs:
   description: Find out more about Swagger
   url: http://swagger.io
 tags:
-  - name: ticket
-    description: Operations about ticket
+  - name: event
+    description: Operations about event
   - name: user
     description: Operations about user
 paths:
-  /ticket:
+  /event:
     post:
       tags:
-        - ticket
+        - event
       summary: Create ticket
       operationId: createticket
       requestBody:
@@ -25,7 +25,7 @@ paths:
             schema:
               $ref: '#/components/schemas/Ticket'
       responses:
-        '200': 
+        '200':
           description: Successful operation
         '400':
           description: Invalid input
@@ -35,11 +35,10 @@ paths:
           description: Not found
       security:
         - ticket_auth: [Admin]
-  /ticket/ticketByEvent:
     get:
       tags:
-        - ticket
-      summary: Get ticket by event
+        - event
+      summary: Get event by name
       description: ''
       operationId: getTicketByevent
       parameters:
@@ -50,32 +49,7 @@ paths:
           schema:
             type: string
       responses:
-        '200': 
-          description: Successful operation
-        '400':
-          description: Invalid input
-        '403':
-          description: Unauthorized
-        '404':
-          description: Not found
-      security:
-        - ticket_auth: [User]
-  /ticket/{ticketId}:
-    get:
-      tags:
-        - ticket
-      summary: Get ticket by ticket id
-      description: ''
-      operationId: getTicketByid
-      parameters:
-        - name: ticketId
-          in: path
-          description: 'A ticket that needs to be fetched. '
-          required: true
-          schema:
-            type: string
-      responses:
-        '200': 
+        '200':
           description: Successful operation
         '400':
           description: Invalid input
@@ -87,8 +61,8 @@ paths:
         - ticket_auth: [User]
     put:
       tags:
-        - ticket
-      summary: Update ticket
+        - event
+      summary: Update event
       operationId: updateTicket
       parameters:
         - name: ticket
@@ -104,7 +78,7 @@ paths:
             schema:
               $ref: '#/components/schemas/Ticket'
       responses:
-        '200': 
+        '200':
           description: Successful operation
         '400':
           description: Invalid input
@@ -114,10 +88,36 @@ paths:
           description: Not found
       security:
         - ticket_auth: [Admin]
+  /event/{eventId}:
+    get:
+      tags:
+        - event
+      summary: Get event by event id
+      description: ''
+      operationId: getTicketByid
+      parameters:
+        - name: ticketId
+          in: path
+          description: 'A ticket that needs to be fetched. '
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '400':
+          description: Invalid input
+        '403':
+          description: Unauthorized
+        '404':
+          description: Not found
+      security:
+        - ticket_auth: [User]
+
     delete:
       tags:
-        - ticket
-      summary: Delete ticket
+        - event
+      summary: Delete event
       description: This can only be done by the logged in user.
       operationId: deleteTicket
       parameters:
@@ -128,7 +128,7 @@ paths:
           schema:
             type: string
       responses:
-        '204': 
+        '204':
           description: Successful operation
         '400':
           description: Invalid input
@@ -152,7 +152,7 @@ paths:
             schema:
               $ref: '#/components/schemas/User'
       responses:
-        '200': 
+        '200':
           description: Successful operation
         '400':
           description: Invalid input
@@ -160,29 +160,36 @@ paths:
           description: Unauthorized
         '404':
           description: Not found
-  /user/createWithList:
-    post:
+    put:
       tags:
         - user
-      summary: Creates list of users with given input array
-      description: Creates list of users with given input array
-      operationId: createUsersWithListInput
+      summary: Update user
+      description: This can only be done by the logged in user.
+      operationId: updateUser
+      parameters:
+        - name: username
+          in: path
+          description: name that need to be deleted
+          required: true
+          schema:
+            type: string
       requestBody:
+        description: Update an existent user in the store
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: '#/components/schemas/User'
+              $ref: '#/components/schemas/User'
+          application/xml:
+            schema:
+              $ref: '#/components/schemas/User'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/User'
       responses:
-        '200': 
-          description: Successful operation
-        '400':
-          description: Invalid input
-        '403':
-          description: Unauthorized
-        '404':
-          description: Not found
+        default:
+          description: successful operation
+      security:
+        - ticket_auth: [Admin]
   /user/login:
     get:
       tags:
@@ -226,18 +233,6 @@ paths:
                 type: string
         '400':
           description: Invalid username/password supplied
-  /user/logout:
-    get:
-      tags:
-        - user
-      summary: Logs out current logged in user session
-      description: ''
-      operationId: logoutUser
-      parameters: []
-      responses:
-        default:
-          description: successful operation
-
   /user/{username}:
     get:
       tags:
@@ -259,34 +254,8 @@ paths:
           description: Invalid username supplied
         '404':
           description: User not found
-    put:
-      tags:
-        - user
-      summary: Update user
-      description: This can only be done by the logged in user.
-      operationId: updateUser
-      parameters:
-        - name: username
-          in: path
-          description: name that need to be deleted
-          required: true
-          schema:
-            type: string
-      requestBody:
-        description: Update an existent user in the store
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/User'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/User'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/User'
-      responses:
-        default:
-          description: successful operation
+      security:
+        - ticket_auth: [Admin]
     delete:
       tags:
         - user
@@ -307,6 +276,8 @@ paths:
           description: Invalid username supplied
         '404':
           description: User not found
+      security:
+        - ticket_auth: [Admin]
   /user/{username}/tickets:
     get:
       tags:
@@ -328,7 +299,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ArrayOfTickets'
-  /actionTicket:
+      security:
+        - ticket_auth: [Admin]
+  /ticket:
     post:
       tags:
         - ticketactions
@@ -340,7 +313,7 @@ paths:
             schema:
               $ref: '#/components/schemas/UserTicket'
       responses:
-        '200': 
+        '200':
           description: Successful operation
         '400':
           description: Invalid input
@@ -348,6 +321,8 @@ paths:
           description: Unauthorized
         '404':
           description: Not found
+      security:
+        - ticket_auth: [Admin]
   /updateTicket/{Id}:
     put:
       tags:
@@ -374,7 +349,7 @@ paths:
             schema:
               $ref: '#/components/schemas/User'
       responses:
-        '200': 
+        '200':
           description: Successful operation
         '400':
           description: Invalid input
@@ -382,6 +357,8 @@ paths:
           description: Unauthorized
         '404':
           description: Not found
+      security:
+        - ticket_auth: [Admin]
   /cancelTicket/{Id}:
     delete:
       tags:
@@ -394,7 +371,7 @@ paths:
           description: --------------
           required: true
       responses:
-        '204': 
+        '204':
           description: Successful operation
         '400':
           description: Invalid input
@@ -402,6 +379,8 @@ paths:
           description: Unauthorized
         '404':
           description: Not found
+      security:
+        - ticket_auth: [Admin]
 components:
   schemas:
     Ticket:
@@ -494,7 +473,7 @@ components:
             - expired
             - buyed
             - bought
-          example: 
+          example:
             - booked
             - bought
             - expired

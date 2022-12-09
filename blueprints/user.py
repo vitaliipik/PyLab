@@ -9,8 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from blueprints.auth import auth
 from errors.auth_errors import NotEnoughRights, InvalidCredentials
 from models.models import Ticket, User, Role
-from flask import Response
-from models.json_encoder import AlchemyEncoder
+from flask import Response,jsonify
 import json
 
 engine = create_engine("postgresql://postgres:admin@localhost:5432/Booking_Service")
@@ -21,13 +20,15 @@ users = Blueprint('user', __name__)
 @users.route("/api/v1/user", methods=['POST'])
 def create_user():
     user_data = request.get_json()
+    user_data['role']='user'
     if user_data is None:
         return Response(status=400)
     try:
         user = User(**user_data)
         with Session.begin() as session:
             session.add(user)
-        return Response()
+
+        return {"message":"Successes", "status_code":200},200
     except IntegrityError:
         return Response("Couldn't add a user to the db", status=400)
 
@@ -37,16 +38,14 @@ def login_user():
     data = request.get_json()
     if data is None:
         return Response("No JSON data has been specified!", status=400)
-    try:
-        if 'password' in data and 'username' in data:
-            with Session.begin() as session:
-                user = session.query(User).filter_by(username=data['username']).first()
-                if not bcrypt.checkpw(data['password'].encode("utf-8"), user.password.encode("utf-8")):
-                    return Response("Invalid password or username specified", status=404)
-                token = base64.encodebytes(f"{data['email']}:{data['password']}".encode('utf-8'))
-                return jsonify({'basic': token.decode("utf-8").replace("\n", "")}), 200
-    except IntegrityError:
-        raise InvalidCredentials("A password or username is wrong. Try again.")
+    if 'password' in data and 'username' in data:
+        with Session.begin() as session:
+            user = session.query(User).filter_by(username=data['username']).first()
+            if not bcrypt.checkpw(data['password'].encode("utf-8"), user.password.encode("utf-8")):
+                return Response("Invalid password or username specified", status=404)
+            token = base64.encodebytes(f"{data['username']}:{data['password']}".encode('utf-8'))
+            return jsonify({'basic': token.decode("utf-8").replace("\n", "")}), 200
+
     return Response("Invalid request body, specify password and username, please!", status=400)
 
 
@@ -67,6 +66,8 @@ def update_user():
     if data is None:
         return Response("No JSON data has been specified!", status=400)
     with Session.begin() as session:
+        if auth.current_user().role != Role.admin:
+            data['role'] = 'user'
         if auth.current_user().role != Role.admin and \
                 'username' in data and \
                 auth.current_user().username != data['username']:
@@ -76,7 +77,7 @@ def update_user():
             data['password'] = user.password
         session.query(User).filter(User.username == user.username).update(data,
                                                                     synchronize_session="fetch")
-    return Response("Success my man!", status=200)
+    return {"message":"Successes my man", "status_code":200},200
 
 
 @users.route("/api/v1/user/<username>", methods=['DELETE'])
@@ -90,7 +91,7 @@ def delete_user(username):
         if users_deleted == 0:
             return Response("Id was wrong", status=400)
 
-        return Response("Success!", status=200)
+        return {"message":"Successes", "status_code":200},200
 
 
 @users.route("/api/v1/user/<username>/tickets", methods=['GET'])

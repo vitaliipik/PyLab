@@ -54,9 +54,9 @@ class Ticket(Base):
 
     @validates('seat')
     def validate_seat(self, key, seat):
-        if seat <= 0:
+        if int(seat) <= 0:
             raise ValueError("Incorrect stuff here")
-        return seat
+        return int(seat)
 
     def to_dict(self) -> dict:
         return {
@@ -71,7 +71,7 @@ class Ticket(Base):
 def validate_name(name):
     length = len(name)
     if length <= 3 or length > 40:
-        raise ValueError("Length of username should be less than 40 and more than 4 characters long")
+        raise ValueError("Length of name should be less than 40 and more than 4 characters long")
     return name
 
 

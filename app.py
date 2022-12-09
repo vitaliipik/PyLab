@@ -37,7 +37,7 @@ def invalid_credentials_handler(e):
 
 @app.errorhandler(NotEnoughRights)
 def invalid_credentials_handler(e):
-    return jsonify({'message': str(e)}), 403
+    return jsonify({'message': str(e),"status_code":403}), 403
 
 
 @app.errorhandler(Exception)

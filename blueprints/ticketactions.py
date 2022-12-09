@@ -24,7 +24,7 @@ def create_ticket():
 
         with Session.begin() as session:
             if not ('event_id' in data and 'seat' in data):
-                return Response("No event_id or seat specified")
+                return Response("No event_id or seat specified",status=400)
             if session.query(Ticket.id).filter_by(event_id=data['event_id'], seat=data['seat']).first() is not None:
                 return Response("Invalid query(ticket with the same seat already exists)", status=400)
             ticket = Ticket(**data)
@@ -35,7 +35,7 @@ def create_ticket():
             session.add(ticket)
     except Exception as e:
         return Response(str(e), status=400)
-    return Response("Success", status=200)
+    return {"message":"Successes", "status_code":200},200
 
 
 @ticketactions.route("/api/v1/updateTicket/<identifier>", methods=['PUT'])
@@ -55,7 +55,7 @@ def update_ticket(identifier):
                 return Response("Invalid id specified", status=400)
     except BaseException as e:
         return Response(str(e), status=400)
-    return Response("Success!", status=200)
+    return {"message":"Successes", "status_code":200},200
 
 
 @ticketactions.route("/api/v1/cancelTicket/<identifier>", methods=['DELETE'])
@@ -70,4 +70,4 @@ def cancel_ticket(identifier):
         if deleted == 0:
             return Response("Invalid id specified in /api/v1/cancelTicket/<identifier>", status=400)
 
-    return Response(f"Successfully deleted ticket", status=200)
+    return {"message":"Successes", "status_code":200},200

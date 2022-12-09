@@ -7,7 +7,6 @@ from sqlalchemy.orm import sessionmaker
 
 from models.models import Event
 from flask import Response
-from models.json_encoder import AlchemyEncoder
 import json
 
 engine = create_engine("postgresql://postgres:admin@localhost:5432/Booking_Service")
@@ -27,7 +26,7 @@ def create_event():
             session.add(event)
     except BaseException as e:
         return Response(str(e), status=400)
-    return Response(status=200)
+    return {"message":"Successes", "status_code":200},200
 
 
 @events.route("/api/v1/event", methods=['GET'])
@@ -35,13 +34,13 @@ def create_event():
 def get_event():
     param = request.args
     if 'event' not in param:
-        return Response("No event name specified in the query params", status=400)
+        return {"message":"No event name specified in the query params", "status_code":400},400
     with Session.begin() as session:
-        event = session\
+        event = session \
             .query(Event).filter(Event.name == param.get('event')).first()
 
         if event is None:
-            return Response("No entry has been found", status=404)
+            return {"message":"No entry has been found", "status_code":404},404
 
         return Response(json.dumps(event.to_dict()), status=200)
 
@@ -54,7 +53,7 @@ def event_by_id(event_id):
         currentEvent = event.get(event_id)
         if currentEvent is None:
             return Response(status=404)
-        currentEvent = json.dumps(currentEvent.to_dict(), cls=AlchemyEncoder)
+        currentEvent = json.dumps(currentEvent.to_dict())
         return Response(currentEvent, status=200, mimetype="application/json")
 
 
@@ -63,22 +62,20 @@ def event_by_id(event_id):
 def update_event():
     event_data = request.get_json()
     if event_data is None:
-        return Response("Empty json data has been passed!", status=400)
+        return {"message":"Empty json data has been passed!", "status_code":400},400
 
     if 'id' not in event_data:
-        return Response("No id of event has been passed, "
-                        "no way we can figure out what's the event we are trying to change", status=400)
+        return {"message":"No id of event has been passed, "
+                        "no way we can figure out what's the event we are trying to change", "status_code":400},400
     try:
         with Session.begin() as session:
             event = Event(**event_data)
             updated = session.query(Event).filter(Event.id == event.id).update(event_data,
-                                                                        synchronize_session="fetch")
-            if updated == 0:
-                return Response("Invalid id specified, no entries found to update")
-    except IntegrityError:
+                                                                               synchronize_session="fetch")
+    except:
         return Response("Invalid input", status=400)
 
-    return Response("Success!", status=200)
+    return {"message":"Successes", "status_code":200},200
 
 
 @events.route("/api/v1/event/<event_id>", methods=["DELETE"])
@@ -93,9 +90,6 @@ def delete_event(event_id):
 
             session.delete(event)
 
-            return Response("Good stuff, mate!", status=200, mimetype="application/json")
-    except IntegrityError as e:
-        return Response("Something went wrong(the id of the event might be wrong) " + str(e), status=400)
-
-
-
+            return {"message":"Successes", "status_code":200},200
+    except:
+        return Response("Something went wrong(the id of the event might be wrong) ", status=400)
