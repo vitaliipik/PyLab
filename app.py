@@ -10,7 +10,7 @@ app.register_blueprint(users)
 app.register_blueprint(ticketactions)
 
 
-@app.route("/api/v1/hello-world-21")
+@app.route("/")
 def hello_world():
     return "Hello, World 21"
 
