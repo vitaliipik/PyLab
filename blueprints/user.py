@@ -56,6 +56,9 @@ def login_user():
     if 'password' in data and 'username' in data:
         with Session.begin() as session:
             user = session.query(User).filter_by(username=data['username']).first()
+            if(user==None):
+                return {"message": "Invalid password or username specified", "status": 404}
+
             if not bcrypt.checkpw(data['password'].encode("utf-8"), user.password.encode("utf-8")):
                 return {"message":"Invalid password or username specified", "status":404}
             token = base64.encodebytes(f"{data['username']}:{data['password']}".encode('utf-8'))
@@ -88,7 +91,8 @@ def update_user():
                     'username' in data and \
                     auth.current_user().username != data['username']:
                 raise NotEnoughRights("Not enough rights to update user")
-
+            if(data['password']==''):
+                del data['password']
             user = User(**data) # check if it validates
             if 'password' in data:
                 data['password'] = user.password
