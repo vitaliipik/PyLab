@@ -19,7 +19,7 @@ app.config['UPLOAD_FOLDER']='static/uploads'
 
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 
-@app.route("/api/v1/hello-world-21")
+@app.route("/")
 def hello_world():
     return "Hello, World 21"
 
