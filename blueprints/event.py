@@ -30,9 +30,19 @@ def create_event():
 
 
 @events.route("/api/v1/event", methods=['GET'])
-@auth.login_required()
 def get_event():
     param = request.args
+
+    if not len(param):
+        with Session.begin() as session:
+            events = session \
+                .query(Event)
+            allEvents = [i.to_dict() for i in events]
+            if events is None:
+                return {"message": "No entry has been found", "status_code": 404}, 404
+
+            return Response(json.dumps(allEvents), status=200)
+
     if 'event' not in param:
         return {"message":"No event name specified in the query params", "status_code":400},400
     with Session.begin() as session:
@@ -45,8 +55,7 @@ def get_event():
         return Response(json.dumps(event.to_dict()), status=200)
 
 
-@events.route("/api/v1/event/<event_id>", methods=['GET'])
-@auth.login_required(role='admin')
+@events.route("/api/v1/event/<int:event_id>", methods=['GET'])
 def event_by_id(event_id):
     with Session.begin() as session:
         event = session.query(Event)
@@ -55,6 +64,21 @@ def event_by_id(event_id):
             return Response(status=404)
         currentEvent = json.dumps(currentEvent.to_dict())
         return Response(currentEvent, status=200, mimetype="application/json")
+
+
+@events.route("/api/v1/event/seat/<int:event_id>", methods=['GET'])
+def event_seat_by_id(event_id):
+    with Session.begin() as session:
+        event = session.query(Event)
+        currentEvent = event.get(event_id)
+        if currentEvent is None:
+            return Response(status=404)
+        allSeat=[ i+1 for i in range(currentEvent.tickets_count)]
+        allReservedSeat=[i.seat for i in currentEvent.tickets]
+        for i in allReservedSeat:
+            allSeat[i-1]=-1
+        allSeat = json.dumps(allSeat)
+        return Response(allSeat, status=200, mimetype="application/json")
 
 
 @events.route("/api/v1/event", methods=['PUT'])
@@ -73,7 +97,7 @@ def update_event():
             updated = session.query(Event).filter(Event.id == event.id).update(event_data,
                                                                                synchronize_session="fetch")
     except:
-        return Response("Invalid input", status=400)
+        return {"message":"Invalid input", "status_code":400},400
 
     return {"message":"Successes", "status_code":200},200
 

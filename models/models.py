@@ -29,7 +29,7 @@ class Event(Base):
     address = Column(String)
     date = Column(Date)
     tickets_count = Column(Integer)
-
+    image=Column(String)
     tickets = relationship('Ticket', cascade="all, delete")
     def to_dict(self) -> dict:
         return {
@@ -37,7 +37,8 @@ class Event(Base):
             "name": self.name,
             "address": self.address,
             "date": str(self.date),
-            "tickets_count": self.tickets_count
+            "tickets_count": self.tickets_count,
+            "image": self.image
         }
 
 
@@ -70,14 +71,13 @@ class Ticket(Base):
 
 def validate_name(name):
     length = len(name)
-    if length <= 3 or length > 40:
+    if length <= 1 or length > 40:
         raise ValueError("Length of name should be less than 40 and more than 4 characters long")
     return name
 
 
 class User(Base):
     __tablename__ = 'User'
-
     id = Column(Integer, primary_key=True)
     username = Column(String, unique=True)
     first_name = Column(String)
@@ -92,7 +92,8 @@ class User(Base):
         return {
             "id": self.id,
             "username": self.username,
-            "last_name": self.first_name,
+            "first_name": self.first_name,
+            "last_name": self.last_name,
             "email": self.email,
             "password": self.password,
             "phone": self.phone,
@@ -134,7 +135,7 @@ class User(Base):
         if User.__password_r.match(password) is None:
             raise ValueError("This is not password(8 characters long+, one letter and number")
         password = bytes(password, "utf-8")
-        password = bcrypt.hashpw(password, bcrypt.gensalt(15))
+        password = bcrypt.hashpw(password, bcrypt.gensalt(12))
 
         return password.decode("utf-8")
 
