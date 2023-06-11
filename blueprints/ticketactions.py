@@ -16,25 +16,29 @@ def create_ticket():
     data = request.get_json()
 
     if data is None:
-        return Response("Empty json data", status=400)
+        return {"message": "Empty json data", "status_code": 400}, 400
+
 
     if 'id' in data:
-        return Response("Don't specify id in the body", status=400)
+        return {"message": "Don't specify id in the body", "status_code": 400}, 400
+
     try:
 
         with Session.begin() as session:
             if not ('event_id' in data and 'seat' in data):
-                return Response("No event_id or seat specified",status=400)
+                return  {"message":"No event_id or seat specified", "status_code":400},400
             if session.query(Ticket.id).filter_by(event_id=data['event_id'], seat=data['seat']).first() is not None:
-                return Response("Invalid query(ticket with the same seat already exists)", status=400)
+                return  {"message":"Invalid query(ticket with the same seat already exists)", "status_code":400},400
+
             ticket = Ticket(**data)
             ticket.user_id = auth.current_user().id
             event = session.query(Event).filter_by(id=ticket.event_id).first()
             if ticket.seat > event.tickets_count:
-                return Response(f"Invalid seat, max is {event.tickets_count}", status=400)
+                return {"message": f"Invalid seat, max is {event.tickets_count}", "status_code": 400}, 400
             session.add(ticket)
     except Exception as e:
-        return Response(str(e), status=400)
+        return {"message": str(e), "status_code": 400}, 400
+
     return {"message":"Successes", "status_code":200},200
 
 

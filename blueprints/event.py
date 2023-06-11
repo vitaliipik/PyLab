@@ -97,7 +97,7 @@ def update_event():
             updated = session.query(Event).filter(Event.id == event.id).update(event_data,
                                                                                synchronize_session="fetch")
     except:
-        return Response("Invalid input", status=400)
+        return {"message":"Invalid input", "status_code":400},400
 
     return {"message":"Successes", "status_code":200},200
 

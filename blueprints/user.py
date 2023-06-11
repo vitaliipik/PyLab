@@ -57,10 +57,10 @@ def login_user():
         with Session.begin() as session:
             user = session.query(User).filter_by(username=data['username']).first()
             if(user==None):
-                return {"message": "Invalid password or username specified", "status": 404}
+                return {"message": "Invalid password or username specified", "status": 404},404
 
             if not bcrypt.checkpw(data['password'].encode("utf-8"), user.password.encode("utf-8")):
-                return {"message":"Invalid password or username specified", "status":404}
+                return {"message":"Invalid password or username specified", "status":404},404
             token = base64.encodebytes(f"{data['username']}:{data['password']}".encode('utf-8'))
             return jsonify({'basic': token.decode("utf-8").replace("\n", "")}), 200
 
